@@ -141,6 +141,44 @@ exports.modifyThing = (req, res, next) => {
 
 // Suppression d'un objet
 exports.deleteThing = (req, res, next) => {
+    Thing.findOne({ _id: req.params.id }) // Recherche de l'objet par ID
+        .then(thing => {
+            if (!thing) {
+                return res.status(404).json({ message: 'Objet non trouvé !' });
+            }
+
+            // Vérification si l'utilisateur a le droit de supprimer cet objet
+            if (thing.userId != req.auth.userId) {
+                return res.status(401).json({ message: 'Non autorisé !' });
+            } else {
+                // Modifie cette ligne pour s'assurer que tu récupères le bon public_id
+                const publicId = thing.imageUrl.split('/').pop().split('.')[0]; // Exemple, à adapter si nécessaire
+                console.log('Public ID pour la suppression :', publicId); // Pour débogage
+                
+                // Supprimer l'image de Cloudinary
+                cloudinary.uploader.destroy(publicId, (error, result) => {
+                    if (error) {
+                        console.error('Erreur lors de la suppression de Cloudinary:', error); // Log de l'erreur
+                        return res.status(500).json({ error: 'Erreur lors de la suppression de l\'image sur Cloudinary' });
+                    } else {
+                        // Supprimer l'objet de la base de données
+                        Thing.deleteOne({ _id: req.params.id })
+                            .then(() => res.status(200).json({ message: 'Objet et image supprimés avec succès !' }))
+                            .catch(error => {
+                                console.error('Erreur lors de la suppression de l\'objet:', error);
+                                res.status(401).json({ error });
+                            });
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Erreur lors de la récupération de l\'objet à supprimer:', error);
+            res.status(500).json({ error });
+        });
+};
+
+exports.deleteThing = (req, res, next) => {
     Thing.findOne({ _id: req.params.id })
         .then(thing => {
             if (thing.userId != req.auth.userId) {
