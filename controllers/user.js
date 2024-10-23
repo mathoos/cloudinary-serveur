@@ -12,36 +12,52 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-exports.signup = (req, res, next) => {
-    bcrypt.hash(req.body.password, 10)
-        .then(hash => {
-            const user = new User({
-                email: req.body.email,
-                password: hash
-            });
-            user.save()
-                .then(() => {
-                    // Une fois l'utilisateur créé, envoyez un e-mail de confirmation
-                    const mailOptions = {
-                        from: 'Lorem Ipsum', // Votre adresse email
-                        to: req.body.email, // Email de l'utilisateur qui s'inscrit
-                        subject: 'Confirmation d\'inscription',
-                        text: `Bienvenue ${req.body.email} ! Votre inscription a bien été prise en compte.`
-                    };
+// Fonction pour envoyer l'e-mail de confirmation
+const sendConfirmationEmail = (email) => {
+    const mailOptions = {
+        from: 'votre_email@example.com', // Adresse e-mail de l'expéditeur
+        to: email, // Adresse e-mail du destinataire
+        subject: 'Confirmation d\'inscription',
+        text: 'Merci de vous être inscrit !', // Contenu texte de l'e-mail
+        html: '<h1>Merci de vous être inscrit !</h1>', // Contenu HTML de l'e-mail
+    };
 
-                    // Envoi de l'email de confirmation
-                    transporter.sendMail(mailOptions, (error, info) => {
-                        if (error) {
-                            console.error('Erreur lors de l\'envoi de l\'email:', error);
-                            return res.status(500).json({ message: 'Erreur lors de l\'envoi de l\'email de confirmation' });
-                        }
-                        console.log('E-mail de confirmation envoyé:', info.response);
-                        return res.status(201).json({ message: 'Utilisateur créé et email de confirmation envoyé !' });
-                    });
-                })
-                .catch(error => res.status(400).json({ error }));
-        })
-        .catch(error => res.status(500).json({ error }));
+    // Utilisation de transporter pour envoyer l'e-mail
+    return transporter.sendMail(mailOptions)
+        .then(() => console.log("E-mail de confirmation envoyé avec succès."))
+        .catch(error => {
+            console.error("Erreur lors de l'envoi de l'e-mail:", error);
+            throw new Error("Erreur lors de l'envoi de l'e-mail de confirmation");
+        });
+};
+
+// Exemple d'utilisation dans la fonction signup
+exports.signup = (req, res, next) => {
+    const { email, password } = req.body;
+
+    // Hash le mot de passe et crée l'utilisateur
+    bcrypt.hash(password, 10)
+    .then(hash => {
+        const user = new User({
+            email: email,
+            password: hash
+        });
+        
+        user.save()
+            .then(() => {
+                // Envoi de l'e-mail de confirmation
+                return sendConfirmationEmail(email);
+            })
+            .then(() => res.status(201).json({ message: 'Utilisateur créé !' }))
+            .catch(error => {
+                console.error("Erreur lors de l'envoi de l'email de confirmation:", error);
+                return res.status(500).json({ error: 'Erreur lors de l\'envoi de l\'email de confirmation' });
+            });
+    })
+    .catch(error => {
+        console.error("Erreur lors de la création de l'utilisateur:", error);
+        return res.status(400).json({ error });
+    });
 };
 
 // exports.signup = (req, res, next) => {
