@@ -44,3 +44,20 @@ exports.login = (req, res, next) => {
     })
     .catch(error => res.status(500).json({ error }));
 };
+
+exports.getUserInfo = (req, res, next) => {
+    const userId = req.auth.userId;  // Récupère l'ID de l'utilisateur authentifié (depuis le middleware d'authentification)
+    
+    User.findById(userId)
+        .then(user => {
+            if (!user) {
+                return res.status(404).json({ error: 'Utilisateur non trouvé !' });
+            }
+            res.status(200).json({
+                nom: user.nom,
+                prenom: user.prenom,
+                genre: user.genre
+            });
+        })
+        .catch(error => res.status(500).json({ error }));
+};
