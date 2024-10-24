@@ -61,3 +61,24 @@ exports.getUserInfo = (req, res, next) => {
         })
         .catch(error => res.status(500).json({ error }));
 };
+
+
+exports.updateUserInfo = (req, res, next) => {
+    const userId = req.auth.userId;  // Récupérer l'ID de l'utilisateur authentifié
+
+    // Objet contenant les nouvelles informations
+    const updatedData = {
+        nom: req.body.nom,
+        prenom: req.body.prenom,
+        genre: req.body.genre
+    };
+
+    User.findByIdAndUpdate(userId, updatedData, { new: true })
+        .then(user => {
+            if (!user) {
+                return res.status(404).json({ error: 'Utilisateur non trouvé !' });
+            }
+            res.status(200).json({ message: 'Informations mises à jour avec succès !', user });
+        })
+        .catch(error => res.status(500).json({ error }));
+};
