@@ -101,9 +101,10 @@ exports.getStuffByUser = (req, res, next) => {
     
     Thing.find({ userId: userId })
         .then(things => {
-            if (things.length === 0) {
+            // Au lieu de renvoyer 404, renvoyer un tableau vide si aucun objet n'est trouvé
+            if (!things || things.length === 0) {
                 console.log(`Aucun objet trouvé pour l'utilisateur avec l'ID : ${userId}`);
-                return res.status(404).json({ message: 'Aucun objet trouvé pour cet utilisateur.' });
+                return res.status(200).json([]); // Renvoie un tableau vide
             }
             console.log(`Objets trouvés pour l'utilisateur ${userId}:`, things);
             return res.status(200).json(things);
