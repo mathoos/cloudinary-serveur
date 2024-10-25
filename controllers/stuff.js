@@ -1,5 +1,12 @@
 const Thing = require('../models/Thing');
 const fs = require('fs');
+const cloudinary = require('cloudinary').v2;
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 // Création d'un nouvel objet avec une image stockée sur Cloudinary
 exports.createThing = (req, res, next) => {
@@ -7,11 +14,11 @@ exports.createThing = (req, res, next) => {
     delete thingObject._id;
     delete thingObject._userId;
 
-    // Stocke l'URL de l'image provenant de Cloudinary
     const thing = new Thing({
         ...thingObject,
         userId: req.auth.userId,
-        imageUrl: req.file.path // URL de Cloudinary
+        imageUrl: req.file.path, // URL Cloudinary
+        publicId: req.file.filename // Enregistrer l'identifiant public
     });
 
     thing.save()
@@ -44,16 +51,33 @@ exports.modifyThing = (req, res, next) => {
 exports.deleteThing = (req, res, next) => {
     Thing.findOne({ _id: req.params.id })
         .then(thing => {
-            if (thing.userId != req.auth.userId) {
-                res.status(401).json({ message: 'Non autorisé !' });
-            } else {
-                // Aucune suppression physique sur Cloudinary (si nécessaire, il faudrait utiliser l'API de Cloudinary)
-                Thing.deleteOne({ _id: req.params.id })
-                    .then(() => res.status(200).json({ message: 'Objet supprimé !' }))
-                    .catch(error => res.status(401).json({ error }));
+            if (!thing) {
+                return res.status(404).json({ message: 'Objet non trouvé' });
             }
+            if (thing.userId !== req.auth.userId) {
+                return res.status(401).json({ message: 'Non autorisé !' });
+            }
+
+            // Suppression de l'image sur Cloudinary
+            cloudinary.uploader.destroy(thing.publicId, function(error, result) {
+                if (error) {
+                    console.error("Erreur lors de la suppression de l'image sur Cloudinary :", error);
+                    return res.status(500).json({ error: 'Échec de la suppression de l\'image Cloudinary' });
+                }
+
+                // Suppression de l'objet dans la base de données
+                Thing.deleteOne({ _id: req.params.id })
+                    .then(() => res.status(200).json({ message: 'Objet supprimé avec succès !' }))
+                    .catch(error => {
+                        console.error("Erreur lors de la suppression de l'objet dans MongoDB :", error);
+                        res.status(500).json({ error: 'Échec de la suppression de l\'objet dans MongoDB' });
+                    });
+            });
         })
-        .catch(error => res.status(500).json({ error }));
+        .catch(error => {
+            console.error("Erreur lors de la recherche de l'objet :", error);
+            res.status(500).json({ error: 'Échec de la recherche de l\'objet dans MongoDB' });
+        });
 };
 
 // Récupération d'un objet spécifique
