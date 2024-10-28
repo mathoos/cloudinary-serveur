@@ -10,7 +10,9 @@ exports.signup = (req, res, next) => {
             password: hash,
             nom: req.body.nom,  
             prenom: req.body.prenom,
-            genre: req.body.genre
+            genre: req.body.genre,
+            profileImageUrl: req.file ? req.file.path : null, 
+            profilePublicId: req.file ? req.file.filename : null
         });
         user.save()
             .then(() => res.status(201).json({ message: 'Utilisateur créé !' }))
@@ -56,7 +58,9 @@ exports.getUserInfo = (req, res, next) => {
             res.status(200).json({
                 nom: user.nom,
                 prenom: user.prenom,
-                genre: user.genre
+                genre: user.genre,
+                profileImageUrl: user.profileImageUrl,  // Inclure l'URL de l'image de profil
+                profilePublicId: user.profilePublicId
             });
         })
         .catch(error => res.status(500).json({ error }));
