@@ -5,25 +5,31 @@ const { sendConfirmationEmail } = require('../utilities/mailer');
 
 exports.signup = (req, res, next) => {
     bcrypt.hash(req.body.password, 10)
-      .then(hash => {
-        const user = new User({
-          email: req.body.email,
-          password: hash,
-          nom: req.body.nom,
-          prenom: req.body.prenom,
-          genre: req.body.genre
+        .then(hash => {
+            const user = new User({
+                email: req.body.email,
+                password: hash,
+                nom: req.body.nom,  
+                prenom: req.body.prenom,
+                genre: req.body.genre
+            });
+
+            user.save()
+                .then(() => {
+                    // Tentative d'envoi d'email
+                    sendConfirmationEmail(req.body.email, req.body.prenom);
+                    res.status(201).json({ message: 'Utilisateur créé et email envoyé !' });
+                })
+                .catch(error => {
+                    console.log('Erreur lors de la sauvegarde de l\'utilisateur :', error);  // Ajout de console.log
+                    res.status(400).json({ error: 'Échec de la création de l\'utilisateur' });
+                });
+        })
+        .catch(error => {
+            console.log('Erreur lors du hachage du mot de passe :', error);  // Ajout de console.log
+            res.status(500).json({ error: 'Erreur serveur interne' });
         });
-        user.save()
-          .then(() => {
-            // Envoi de l'email de confirmation
-            sendConfirmationEmail(user.email, `${user.prenom} ${user.nom}`)
-              .then(() => res.status(201).json({ message: 'Utilisateur créé ! Un email de confirmation a été envoyé.' }))
-              .catch(error => res.status(500).json({ error: "Utilisateur créé, mais échec de l'envoi de l'email de confirmation." }));
-          })
-          .catch(error => res.status(400).json({ error }));
-      })
-      .catch(error => res.status(500).json({ error }));
-  };
+};
 
 exports.login = (req, res, next) => {
     User.findOne({ email: req.body.email })
