@@ -1,33 +1,22 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { sendConfirmationEmail } = require('../utilities/mailer');
 
 exports.signup = (req, res, next) => {
     bcrypt.hash(req.body.password, 10)
-        .then(hash => {
-            const user = new User({
-                email: req.body.email,
-                password: hash,
-                nom: req.body.nom,
-                prenom: req.body.prenom,
-                genre: req.body.genre
-            });
-
-            user.save()
-                .then(() => {
-                    sendConfirmationEmail(req.body.email, req.body.prenom);
-                    res.status(201).json({ message: 'Utilisateur créé et email envoyé !' });
-                })
-                .catch(error => {
-                    console.log('Erreur MongoDB lors de la sauvegarde de l\'utilisateur:', error); // Log de l'erreur MongoDB
-                    res.status(400).json({ error: 'Échec de la création de l\'utilisateur', details: error });
-                });
-        })
-        .catch(error => {
-            console.log('Erreur lors du hachage du mot de passe:', error); // Log de l'erreur de hachage
-            res.status(500).json({ error: 'Erreur serveur interne', details: error });
+    .then(hash => {
+        const user = new User({
+            email: req.body.email,
+            password: hash,
+            nom: req.body.nom,  
+            prenom: req.body.prenom,
+            genre: req.body.genre
         });
+        user.save()
+            .then(() => res.status(201).json({ message: 'Utilisateur créé !' }))
+            .catch(error => res.status(400).json({ error }));
+    })
+    .catch(error => res.status(500).json({ error }));
 };
 
 exports.login = (req, res, next) => {
