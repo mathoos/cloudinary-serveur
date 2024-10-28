@@ -1,23 +1,29 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { sendConfirmationEmail } = require('../utilities/mailer');
 
 exports.signup = (req, res, next) => {
     bcrypt.hash(req.body.password, 10)
-    .then(hash => {
+      .then(hash => {
         const user = new User({
-            email: req.body.email,
-            password: hash,
-            nom: req.body.nom,  
-            prenom: req.body.prenom,
-            genre: req.body.genre
+          email: req.body.email,
+          password: hash,
+          nom: req.body.nom,
+          prenom: req.body.prenom,
+          genre: req.body.genre
         });
         user.save()
-            .then(() => res.status(201).json({ message: 'Utilisateur créé !' }))
-            .catch(error => res.status(400).json({ error }));
-    })
-    .catch(error => res.status(500).json({ error }));
-};
+          .then(() => {
+            // Envoi de l'email de confirmation
+            sendConfirmationEmail(user.email, `${user.prenom} ${user.nom}`)
+              .then(() => res.status(201).json({ message: 'Utilisateur créé ! Un email de confirmation a été envoyé.' }))
+              .catch(error => res.status(500).json({ error: "Utilisateur créé, mais échec de l'envoi de l'email de confirmation." }));
+          })
+          .catch(error => res.status(400).json({ error }));
+      })
+      .catch(error => res.status(500).json({ error }));
+  };
 
 exports.login = (req, res, next) => {
     User.findOne({ email: req.body.email })
