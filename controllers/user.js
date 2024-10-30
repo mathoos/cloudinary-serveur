@@ -1,6 +1,13 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const cloudinary = require('cloudinary').v2;
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 exports.signup = (req, res, next) => {
     bcrypt.hash(req.body.password, 10)
@@ -67,22 +74,35 @@ exports.getUserInfo = (req, res, next) => {
 };
 
 
-exports.updateUserInfo = (req, res, next) => {
-    const userId = req.auth.userId;  // Récupérer l'ID de l'utilisateur authentifié
+exports.updateUserInfo = async (req, res, next) => {
+    const userId = req.auth.userId;  
 
-    // Objet contenant les nouvelles informations
     const updatedData = {
         nom: req.body.nom,
         prenom: req.body.prenom,
         genre: req.body.genre
     };
 
-    User.findByIdAndUpdate(userId, updatedData, { new: true })
-        .then(user => {
-            if (!user) {
-                return res.status(404).json({ error: 'Utilisateur non trouvé !' });
-            }
-            res.status(200).json({ message: 'Informations mises à jour avec succès !', user });
-        })
-        .catch(error => res.status(500).json({ error }));
+    if (req.file) {
+        // Mise à jour de l'image de profil
+        updatedData.profileImageUrl = req.file.path;
+        updatedData.profilePublicId = req.file.filename; 
+
+        // Optionnel : Vous pouvez supprimer l'ancienne image de Cloudinary ici si nécessaire
+        // Vous pouvez récupérer l'ancien publicId et le supprimer
+        const user = await User.findById(userId);
+        if (user && user.profilePublicId) {
+            await cloudinary.uploader.destroy(user.profilePublicId);
+        }
+    }
+
+    try {
+        const user = await User.findByIdAndUpdate(userId, updatedData, { new: true });
+        if (!user) {
+            return res.status(404).json({ error: 'Utilisateur non trouvé !' });
+        }
+        res.status(200).json({ message: 'Profil mis à jour avec succès !', user });
+    } catch (error) {
+        res.status(500).json({ error });
+    }
 };
