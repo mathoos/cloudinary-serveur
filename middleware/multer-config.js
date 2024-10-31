@@ -8,11 +8,11 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Configuration pour les images de profil
+// Configuration pour les photos de profil
 const profileStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
-        folder: 'profile_images', // Dossier pour les photos de profil
+        folder: 'profile_images',
         allowed_formats: ['jpg', 'jpeg', 'png'],
         public_id: (req, file) => file.originalname.split(' ').join('_') + Date.now(),
     },
@@ -22,13 +22,12 @@ const profileStorage = new CloudinaryStorage({
 const objectStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
-        folder: 'images', // Dossier pour les images des objets
+        folder: 'images',
         allowed_formats: ['jpg', 'jpeg', 'png'],
         public_id: (req, file) => file.originalname.split(' ').join('_') + Date.now(),
     },
 });
 
-// Exports de deux configurations Multer
 const uploadProfileImage = multer({ storage: profileStorage });
 const uploadObjectImage = multer({ storage: objectStorage });
 

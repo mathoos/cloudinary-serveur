@@ -1,15 +1,8 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const cloudinary = require('cloudinary').v2;
 
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-});
-
-exports.signup = (req, res, next) => {
+exports.signupUser = (req, res, next) => {
     console.log("Requête d'inscription reçue :", req.body, req.file);
     bcrypt.hash(req.body.password, 10)
     .then(hash => {
@@ -35,7 +28,8 @@ exports.signup = (req, res, next) => {
     });
 };
 
-exports.login = (req, res, next) => {
+
+exports.loginUser = (req, res, next) => {
     User.findOne({ email: req.body.email })
     .then(user => {
         if (!user) {
@@ -61,23 +55,24 @@ exports.login = (req, res, next) => {
     .catch(error => res.status(500).json({ error }));
 };
 
+
 exports.getUserInfo = (req, res, next) => {
-    const userId = req.auth.userId;  // Récupère l'ID de l'utilisateur authentifié (depuis le middleware d'authentification)
+    const userId = req.auth.userId;
     
     User.findById(userId)
-        .then(user => {
-            if (!user) {
-                return res.status(404).json({ error: 'Utilisateur non trouvé !' });
-            }
-            res.status(200).json({
-                nom: user.nom,
-                prenom: user.prenom,
-                genre: user.genre,
-                profileImageUrl: user.profileImageUrl,  // Inclure l'URL de l'image de profil
-                profilePublicId: user.profilePublicId
-            });
-        })
-        .catch(error => res.status(500).json({ error }));
+    .then(user => {
+        if (!user) {
+            return res.status(404).json({ error: 'Utilisateur non trouvé !' });
+        }
+        res.status(200).json({
+            nom: user.nom,
+            prenom: user.prenom,
+            genre: user.genre,
+            profileImageUrl: user.profileImageUrl,
+            profilePublicId: user.profilePublicId
+        });
+    })
+    .catch(error => res.status(500).json({ error }));
 };
 
 
@@ -91,25 +86,26 @@ exports.updateUserInfo = async (req, res, next) => {
     };
 
     if (req.file) {
-        // Mise à jour de l'image de profil
         updatedData.profileImageUrl = req.file.path;
         updatedData.profilePublicId = req.file.filename; 
 
-        // Optionnel : Vous pouvez supprimer l'ancienne image de Cloudinary ici si nécessaire
-        // Vous pouvez récupérer l'ancien publicId et le supprimer
         const user = await User.findById(userId);
+
         if (user && user.profilePublicId) {
             await cloudinary.uploader.destroy(user.profilePublicId);
         }
     }
 
-    try {
+    try {      
         const user = await User.findByIdAndUpdate(userId, updatedData, { new: true });
+
         if (!user) {
             return res.status(404).json({ error: 'Utilisateur non trouvé !' });
         }
         res.status(200).json({ message: 'Profil mis à jour avec succès !', user });
-    } catch (error) {
+    } 
+    
+    catch (error) {
         res.status(500).json({ error });
     }
 };

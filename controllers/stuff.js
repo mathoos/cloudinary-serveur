@@ -1,15 +1,7 @@
 const Thing = require('../models/Thing');
-const fs = require('fs');
-const cloudinary = require('cloudinary').v2;
 
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-});
 
-// Création d'un nouvel objet avec une image stockée sur Cloudinary
-exports.createThing = (req, res, next) => {
+exports.createObject = (req, res, next) => {
     const thingObject = req.body;
     delete thingObject._id;
     delete thingObject._userId;
@@ -17,20 +9,55 @@ exports.createThing = (req, res, next) => {
     const thing = new Thing({
         ...thingObject,
         userId: req.auth.userId,
-        imageUrl: req.file.path, // URL Cloudinary
-        publicId: req.file.filename // Enregistrer l'identifiant public
+        imageUrl: req.file.path, 
+        publicId: req.file.filename
     });
 
     thing.save()
-        .then(() => res.status(201).json({ message: 'Objet enregistré !' }))
-        .catch(error => res.status(400).json({ error }));
+    .then(() => res.status(201).json({ message: 'Objet enregistré !' }))
+    .catch(error => res.status(400).json({ error }));
 };
 
-// Modification d'un objet existant avec une nouvelle image sur Cloudinary
-exports.modifyThing = (req, res, next) => {
+
+exports.getObjectsByUser = (req, res, next) => {
+    const userId = req.params.userId;  // L'ID de l'utilisateur est récupéré des paramètres de la requête
+    console.log(`Récupération des objets créés par l'utilisateur avec l'ID : ${userId}`);
+    
+    Thing.find({ userId: userId })
+        .then(things => {
+            // Au lieu de renvoyer 404, renvoyer un tableau vide si aucun objet n'est trouvé
+            if (!things || things.length === 0) {
+                console.log(`Aucun objet trouvé pour l'utilisateur avec l'ID : ${userId}`);
+                return res.status(200).json([]); // Renvoie un tableau vide
+            }
+            console.log(`Objets trouvés pour l'utilisateur ${userId}:`, things);
+            return res.status(200).json(things);
+        })
+        .catch(error => {
+            console.error("Erreur lors de la récupération des objets :", error);
+            return res.status(500).json({ message: "Erreur serveur" });
+        });
+};
+
+
+exports.getAllObjects = (req, res, next) => {
+    Thing.find()
+    .then(things => res.status(200).json(things))
+    .catch(error => res.status(400).json({ error }));
+};
+
+
+exports.getObjectInfo = (req, res, next) => {
+    Thing.findOne({ _id: req.params.id })
+    .then(thing => res.status(200).json(thing))
+    .catch(error => res.status(404).json({ error }));
+};
+
+
+exports.updateObject = (req, res, next) => {
     const thingObject = req.file ? {
         ...req.body,
-        imageUrl: req.file.path // Nouvelle URL de Cloudinary si une image a été modifiée
+        imageUrl: req.file.path
     } : { ...req.body };
 
     delete thingObject._userId;
@@ -47,8 +74,8 @@ exports.modifyThing = (req, res, next) => {
         .catch(error => res.status(400).json({ error }));
 };
 
-// Suppression d'un objet
-exports.deleteThing = (req, res, next) => {
+
+exports.deleteObject = (req, res, next) => {
     Thing.findOne({ _id: req.params.id })
         .then(thing => {
             if (!thing) {
@@ -80,37 +107,10 @@ exports.deleteThing = (req, res, next) => {
         });
 };
 
-// Récupération d'un objet spécifique
-exports.getOneThing = (req, res, next) => {
-    Thing.findOne({ _id: req.params.id })
-        .then(thing => res.status(200).json(thing))
-        .catch(error => res.status(404).json({ error }));
-};
 
-// Récupération de tous les objets
-exports.getAllStuff = (req, res, next) => {
-    Thing.find()
-        .then(things => res.status(200).json(things))
-        .catch(error => res.status(400).json({ error }));
-};
 
-// Récupération de tous les objets créés par un utilisateur spécifique
-exports.getStuffByUser = (req, res, next) => {
-    const userId = req.params.userId;  // L'ID de l'utilisateur est récupéré des paramètres de la requête
-    console.log(`Récupération des objets créés par l'utilisateur avec l'ID : ${userId}`);
-    
-    Thing.find({ userId: userId })
-        .then(things => {
-            // Au lieu de renvoyer 404, renvoyer un tableau vide si aucun objet n'est trouvé
-            if (!things || things.length === 0) {
-                console.log(`Aucun objet trouvé pour l'utilisateur avec l'ID : ${userId}`);
-                return res.status(200).json([]); // Renvoie un tableau vide
-            }
-            console.log(`Objets trouvés pour l'utilisateur ${userId}:`, things);
-            return res.status(200).json(things);
-        })
-        .catch(error => {
-            console.error("Erreur lors de la récupération des objets :", error);
-            return res.status(500).json({ message: "Erreur serveur" });
-        });
-};
+
+
+
+
+
