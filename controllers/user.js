@@ -10,22 +10,29 @@ cloudinary.config({
 });
 
 exports.signup = (req, res, next) => {
+    console.log("Requête d'inscription reçue :", req.body, req.file);
     bcrypt.hash(req.body.password, 10)
     .then(hash => {
         const user = new User({
             email: req.body.email,
             password: hash,
-            nom: req.body.nom,  
+            nom: req.body.nom,
             prenom: req.body.prenom,
             genre: req.body.genre,
-            profileImageUrl: req.file ? req.file.path : null, 
+            profileImageUrl: req.file ? req.file.path : null,
             profilePublicId: req.file ? req.file.filename : null
         });
         user.save()
             .then(() => res.status(201).json({ message: 'Utilisateur créé !' }))
-            .catch(error => res.status(400).json({ error }));
+            .catch(error => {
+                console.error("Erreur lors de l'enregistrement de l'utilisateur :", error);
+                res.status(400).json({ error });
+            });
     })
-    .catch(error => res.status(500).json({ error }));
+    .catch(error => {
+        console.error("Erreur lors du hash du mot de passe :", error);
+        res.status(500).json({ error });
+    });
 };
 
 exports.login = (req, res, next) => {
