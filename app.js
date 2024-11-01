@@ -4,7 +4,7 @@ const mongoose = require('mongoose')
 const dotEnv = require('dotenv');
 dotEnv.config();
 
-const stuffRoutes = require('./routes/stuff');
+const objectRoutes = require('./routes/object');
 const userRoutes = require('./routes/user');
 const path = require('path');
 
@@ -18,7 +18,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use('/api/stuff', stuffRoutes);
+app.use('/api/object', objectRoutes);
 app.use('/api/auth', userRoutes);
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
