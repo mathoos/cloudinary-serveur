@@ -10,8 +10,8 @@ const path = require('path');
 
 const databaseUrl = process.env.DATABASE_URL;
 mongoose.connect(databaseUrl)
-  .then(() => console.log('Connexion à MongoDB réussie !'))
-  .catch(() => console.log('Connexion à MongoDB échouée !'));
+    .then(() => console.log('Connexion à MongoDB réussie !'))
+    .catch(() => console.log('Connexion à MongoDB échouée !'));
 
 
 const app = express();
