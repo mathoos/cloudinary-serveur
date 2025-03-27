@@ -6,7 +6,8 @@ const objectSchema = mongoose.Schema({
     tag: { type: String, required: true },
     imageUrl: { type: String, required: true },
     userId: { type: String, required: true },
-    publicId: { type: String, required: true } 
+    publicId: { type: String, required: true },
+    published: { type: Boolean, default: false }  
 });
 
 module.exports = mongoose.model('Object', objectSchema);
