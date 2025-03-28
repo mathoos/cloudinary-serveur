@@ -8,7 +8,7 @@ const objectSchema = mongoose.Schema({
     userId: { type: String, required: true },
     publicId: { type: String, required: true },
     published: { type: Boolean, default: false },
-    createdAt: { type: Date, default: Date.now }  
+    createdAt: { type: Date, default: Date.now }  // test render
 });
 
 module.exports = mongoose.model('Object', objectSchema);
