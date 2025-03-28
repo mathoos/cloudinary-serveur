@@ -19,7 +19,7 @@ exports.createObject = (req, res, next) => {
         userId: req.auth.userId,
         imageUrl: req.file.path, 
         publicId: req.file.filename,
-        published: req.body.published || false  // Ajout du statut 'published'
+        published: req.body.published || false  
     });
 
     object.save()
@@ -71,7 +71,6 @@ exports.updateObject = (req, res, next) => {
 
     delete objectData._userId;
 
-    // Si on souhaite changer le statut de 'published', on l'ajoute ici
     Object.findOne({ _id: req.params.id })
     .then(object => {
         if (object.userId != req.auth.userId) {
