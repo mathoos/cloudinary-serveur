@@ -9,7 +9,7 @@ const { uploadObjectImage } = require('../middleware/multer-config');
 router.post('/', auth, uploadObjectImage, objectCtrl.createObject);
 router.get('/user/:userId', auth, objectCtrl.getObjectsByUser);
 router.get('/', objectCtrl.getAllObjects);
-router.get('/:id', auth, objectCtrl.getObjectInfo);
+router.get('/:id', objectCtrl.getObjectInfo);
 router.put('/:id', auth, uploadObjectImage, objectCtrl.updateObject);
 router.delete('/:id', auth, objectCtrl.deleteObject);
 
